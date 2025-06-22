@@ -1,0 +1,84 @@
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+
+# Sample structure (commented, you already have your DataFrame):
+# bloodCell_df = pd.DataFrame({
+#     'filepaths': ['path/to/image1.jpg', 'path/to/image2.jpg', ...],
+#     'labels': ['EOSINOPHIL', 'NEUTROPHIL', ...]
+# })
+
+# Step 1: Proper split (70% train, 14% val, 30% test)
+train_df, test_df = train_test_split(bloodCell_df, test_size=0.3, random_state=42)
+train_df, val_df = train_test_split(train_df, test_size=0.2, random_state=42)
+
+# Print dataframe sizes and shapes
+print("Train DataFrame shape:", train_df.shape)
+print("Validation DataFrame shape:", val_df.shape)
+print("Test DataFrame shape:", test_df.shape)
+print("Train size:", len(train_df))
+print("Validation size:", len(val_df))
+print("Test size:", len(test_df))
+
+# Step 2: ImageDataGenerator with MobileNetV2 preprocessing
+image_gen = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet_v2.preprocess_input)
+
+# Image target size
+img_height, img_width = 224, 224
+
+# Step 3: Create generators
+train_generator = image_gen.flow_from_dataframe(
+    dataframe=train_df,
+    x_col="filepaths",
+    y_col="labels",
+    target_size=(img_height, img_width),
+    color_mode='rgb',
+    class_mode="categorical",
+    batch_size=8,
+    shuffle=True
+)
+
+val_generator = image_gen.flow_from_dataframe(
+    dataframe=val_df,
+    x_col="filepaths",
+    y_col="labels",
+    target_size=(img_height, img_width),
+    color_mode='rgb',
+    class_mode="categorical",
+    batch_size=8,
+    shuffle=False
+)
+
+test_generator = image_gen.flow_from_dataframe(
+    dataframe=test_df,
+    x_col="filepaths",
+    y_col="labels",
+    target_size=(img_height, img_width),
+    color_mode='rgb',
+    class_mode="categorical",
+    batch_size=8,
+    shuffle=False
+)
+
+# Step 4: Print sample image shape (length and width)
+sample_batch = next(train_generator)  # Get one batch (images, labels)
+sample_images, sample_labels = sample_batch
+print("Image batch shape:", sample_images.shape)  # e.g., (8, 224, 224, 3)
+print("One image shape (HxWxC):", sample_images[0].shape)
+print("Image Height (length):", sample_images[0].shape[0])
+print("Image Width:", sample_images[0].shape[1])
+
+output :
+
+Train set shape: (560, 2)
+Validation set shape: (140, 2)
+Test set shape: (300, 2)
+Train size: 560
+Validation size: 140
+Test size: 300
+
+Found 560 validated image filenames belonging to 4 classes.
+Found 140 validated image filenames belonging to 4 classes.
+Found 300 validated image filenames belonging to 4 classes.
